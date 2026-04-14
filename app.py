@@ -81,21 +81,6 @@ def get_connection():
         access_token    = TOKEN
     )
  
-def ensure_table():
-    with get_connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute(f"""
-                CREATE TABLE IF NOT EXISTS {FULL_TABLE} (
-                    request_id         STRING,
-                    study_id           STRING,
-                    therapeutic_domain STRING,
-                    details            STRING,
-                    requested_by       STRING,
-                    requested_at       TIMESTAMP,
-                    status             STRING,
-                    workflow_run_id    BIGINT
-                ) USING DELTA
-            """)
  
 def insert_row(req_id, study_id, domain, details, requested_by, now):
     with get_connection() as conn:
