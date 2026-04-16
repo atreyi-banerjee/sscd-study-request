@@ -50,9 +50,10 @@ st.markdown("""
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def get_connection():
     return databricks_sql.connect(
-        server_hostname=WORKSPACE_HOST,
-        http_path=HTTP_PATH,
-        access_token=TOKEN
+        server_hostname = WORKSPACE_HOST,
+        http_path       = HTTP_PATH,
+        access_token    = TOKEN,
+        auth_type       = "access_token"
     )
 
 def ensure_table():
