@@ -17,9 +17,14 @@ TABLE      = "study_requests"
 FULL_TABLE = f"{CATALOG}.{SCHEMA}.{TABLE}"
 JOB_ID     = 1099541209316497
 
-# FIX: strip trailing slash; these are injected by Databricks Apps automatically
-WORKSPACE_HOST = os.environ.get("DATABRICKS_HOST", "").rstrip("/")
+
+# Databricks Apps auto-injects these — no secrets needed
+WORKSPACE_HOST = os.environ.get("DATABRICKS_HOST", "").replace("https://", "").rstrip("/")
 TOKEN          = os.environ.get("DATABRICKS_TOKEN", "")
+ 
+# ← Set this to your SQL warehouse HTTP path
+# Found in: Databricks UI → SQL Warehouses → your warehouse → Connection details
+HTTP_PATH      = os.environ.get("DATABRICKS_HTTP_PATH", "/sql/1.0/warehouses/64f13e2abc8e5c66")
 
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -47,8 +52,25 @@ def get_connection():
     return databricks_sql.connect(
         server_hostname=os.environ["DATABRICKS_HOST"],
         http_path=os.environ["DATABRICKS_HTTP_PATH"]
-        # FIX: no token= here — Databricks Apps uses OAuth automatically
+        access_token    = TOKEN,
+        auth_type       = "access_token"
     )
+
+def ensure_table():
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(f"""
+                CREATE TABLE IF NOT EXISTS {FULL_TABLE} (
+                    request_id         STRING,
+                    study_id           STRING,
+                    therapeutic_domain STRING,
+                    details            STRING,
+                    requested_by       STRING,
+                    requested_at       TIMESTAMP,
+                    status             STRING,
+                    workflow_run_id    BIGINT
+                ) USING DELTA
+            """)
 
 def _esc(val: str) -> str:
     """FIX: escape single quotes to prevent broken SQL strings."""
@@ -132,6 +154,15 @@ if "submit_results" not in st.session_state:
     st.session_state.submit_results = []
 if "submit_error" not in st.session_state:
     st.session_state.submit_error = ""
+
+# ── Init table once per session ──────────────────────────────────────────────
+if "table_ready" not in st.session_state:
+    try:
+        ensure_table()
+        st.session_state.table_ready = True
+    except Exception as e:
+        st.error(f"Table init failed: {e}")
+        st.stop()
 
 # ── UI ────────────────────────────────────────────────────────────────────────
 st.title("🧬 Study Request Submission")
