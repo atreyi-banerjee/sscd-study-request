@@ -74,11 +74,17 @@ st.markdown("""
 # COMMAND ----------
 
 # DBTITLE 1,Helpers
+#def get_connection():
+#    return databricks_sql.connect(
+#        server_hostname = WORKSPACE_HOST,
+#        http_path       = os.environ.get("DATABRICKS_HTTP_PATH", ""),
+#        access_token    = TOKEN
+#    )
+
 def get_connection():
     return databricks_sql.connect(
-        server_hostname = WORKSPACE_HOST,
-        http_path       = os.environ.get("DATABRICKS_HTTP_PATH", ""),
-        access_token    = TOKEN
+        server_hostname = os.environ["DATABRICKS_HOST"],
+        http_path       = os.environ["DATABRICKS_HTTP_PATH"]
     )
  
  
